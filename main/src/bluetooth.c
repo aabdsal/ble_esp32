@@ -11,7 +11,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-// Modulos estadares de C
+// Modulos estándares de C
 #include <stdint.h>
 #include <string.h>
 

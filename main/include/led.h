@@ -6,11 +6,11 @@
     @version V0.4
     @date    2026-04-01
     @brief   This file is a header for the led functions
-            // Funciones para controlar los LEDs:
-            // - led_init(): configura los GPIO de salida.
-            // - led_set_color(color): enciende el color correspondiente (RGB o individuales).
-            // - led_blink(times, period): efecto de parpadeo para indicar estados.
-            // - led_off(): apaga todos.
+             Funciones para controlar los LEDs:
+             - led_init(): configura los GPIO de salida.
+             - led_set_color(color): enciende el color correspondiente (RGB o individuales).
+             - led_blink(times, period): efecto de parpadeo para indicar estados.
+             - led_off(): apaga todos.
 
 */
 
@@ -24,7 +24,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-// Modulos estadares de C
+// Modulos estándares de C
 #include <stdint.h>
 
 // Modulos propios de esp-idf

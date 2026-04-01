@@ -6,11 +6,11 @@
     @version V0.4
     @date    2026-04-01
     @brief   This file is a header for the utils functions
-            // Funciones auxiliares:
-            // - mac_to_str(): convierte dirección MAC a string para logs.
-            // - rssi_to_distance(): convierte RSSI a distancia aproximada (para debug).
-            // - debounce_filter(): implementación de filtro anti-rebotes para botones.
-            // - maybe helpers para mostrar listas de dispositivos vinculados.
+             Funciones auxiliares:
+             - mac_to_str(): convierte dirección MAC a string para logs.
+             - rssi_to_distance(): convierte RSSI a distancia aproximada (para debug).
+             - debounce_filter(): implementación de filtro anti-rebotes para botones.
+             - maybe helpers para mostrar listas de dispositivos vinculados.
   
 */
 
@@ -24,7 +24,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-// Modulos estadares de C
+// Modulos estándares de C
 #include <stdint.h>
 
 // Modulos propios de esp-idf

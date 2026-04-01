@@ -6,15 +6,15 @@
     @version V0.4
     @date    2026-04-01
     @brief   This file is a header for the states functions
-            // Máquina de estados principal.
-            // Define los estados: STATE_SCAN, STATE_BONDING, STATE_ERASE.
-            // Contiene las tareas FreeRTOS:
-            // - scan_task(): ejecuta escaneos periódicos con light sleep entre ciclos.
-            // - bonding_task(): configura advertising, espera emparejamiento con timeout.
-            // Funciones de transición:
-            // - start_scan_mode()  (detiene bonding, crea scan_task)
-            // - start_bonding_mode() (detiene scan, crea bonding_task)
-            // - erase_all_bonds()   (borra todos los dispositivos vinculados usando esp_ble_remove_bond_device)
+             Máquina de estados principal.
+             Define los estados: STATE_SCAN, STATE_BONDING, STATE_ERASE.
+             Contiene las tareas FreeRTOS:
+             - scan_task(): ejecuta escaneos periódicos con light sleep entre ciclos.
+             - bonding_task(): configura advertising, espera emparejamiento con timeout.
+             Funciones de transición:
+             - start_scan_mode()  (detiene bonding, crea scan_task)
+             - start_bonding_mode() (detiene scan, crea bonding_task)
+             - erase_all_bonds()   (borra todos los dispositivos vinculados usando esp_ble_remove_bond_device)
  
 */
 
@@ -28,7 +28,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-// Modulos estadares de C
+// Modulos estándares de C
 #include <stdint.h>
 
 // Modulos propios de esp-idf

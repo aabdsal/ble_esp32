@@ -6,12 +6,12 @@
     @version V0.0
     @date    2026-04-01
     @brief   This file is a header for the bluetooth functions
-    // Callback único de eventos GAP (esp_gap_cb).
-    // Maneja:
-    // - ESP_GAP_BLE_SCAN_RESULT_EVT: recibe dispositivos escaneados; compara con la lista de bonds y evalúa RSSI.
-    // - ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT: libera semáforo para la tarea de escaneo.
-    // - ESP_GAP_BLE_AUTH_CMPL_EVT: detecta finalización del bonding (éxito/fracaso).
-    // - Otros eventos necesarios (seguridad, advertising, etc.).
+             Callback único de eventos GAP (esp_gap_cb).
+             Maneja:
+             - ESP_GAP_BLE_SCAN_RESULT_EVT: recibe dispositivos escaneados; compara con la lista de bonds y evalúa RSSI.
+             - ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT: libera semáforo para la tarea de escaneo.
+             - ESP_GAP_BLE_AUTH_CMPL_EVT: detecta finalización del bonding (éxito/fracaso).
+             - Otros eventos necesarios (seguridad, advertising, etc.).
 
 */
 
@@ -25,7 +25,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-// Modulos estadares de C
+// Modulos estándares de C
 #include <stdint.h>
 #include <string.h>
 
