@@ -6,11 +6,6 @@
     @version V0.0
     @date    2026-04-01
     @brief  Punto de entrada del programa (app_main).
-            - Inicializa NVS, configura los GPIOs, inicializa Bluetooth (Bluedroid).
-            - Registra el callback GAP (ble_gap_callback).
-            - Crea las tareas de FreeRTOS: polling de botones, máquina de estados.
-            - Bucle principal (vacío o con supervisión de estado global).
-
 */
 
 /* Includes ------------------------------------------------------------------*/
@@ -23,17 +18,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "nvs_flash.h"
-#include "esp_bt.h"
 #include "esp_bt_main.h"
-#include "esp_gap_ble_api.h"
+#include "esp_bt_defs.h"
+#include "esp_bt_device.h"
 #include "driver/gpio.h"
 
 // Modulos propios para el proyecto
 #include "bluetooth.h"
-#include "button.h"
-#include "led.h"
-#include "bonding.h"
-#include "states.h"
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -41,6 +32,12 @@
 /* Private function prototypes -----------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
+
+void blueetooth_init();
+void blueetooth_is_connect();
+void recibirDigital(int boton, char *datos);
+void recibirI2C(horario/antihorario);
+void pwm_to_i2c();
 
 void app_main(void)
 {
