@@ -6,13 +6,63 @@ static const gpio_num_t LED = GPIO_NUM_5;
 static const gpio_num_t SDA_PIN = GPIO_NUM_5;
 static const gpio_num_t SCL_PIN = GPIO_NUM_5;
 
+#define PCA9685_SERVO_BASE_REG 0x06
+#define PCA9685_PWM_PERIOD_US 20000U
+#define SERVO_MIN_PULSE_US 500U
+#define SERVO_MAX_PULSE_US 2500U
+#define SERVO_MIN_ANGLE 0U
+#define SERVO_MAX_ANGLE 180U
+#define SERVO_STEP 1U
+#define SERVO_COUNT 6U
+
 //    NOTE:
 //    La ESP32 manda comandos al PCA9685.
 //    El PCA9685 ya está diseñado para ser slave I2C.
 //    Por eso la ESP32 debe ir en modo master y escribir registros del PCA9685.
 i2c_master_dev_handle_t dev_handle;
 
-uint8_t canal_servo[] = {0x06, 0x00, 0x00, 0xCD, 0x00};
+// Canal de control del servo, se puede modificar para controlar diferentes servos
+// Primero byte: Canal del servo (0-15), Segundo byte: valor de PWM (0-255)
+static uint16_t servo_angle[SERVO_COUNT] = {90, 90, 90, 90, 90, 90};
+static uint8_t canal_servo[] = {PCA9685_SERVO_BASE_REG, 0x00, 0x00, 0x00, 0x00};
+
+static uint16_t
+clamp_angle(int angle)
+{
+    if (angle < (int)SERVO_MIN_ANGLE)
+    {
+        return SERVO_MIN_ANGLE;
+    }
+
+    if (angle > (int)SERVO_MAX_ANGLE)
+    {
+        return SERVO_MAX_ANGLE;
+    }
+
+    return (uint16_t)angle;
+}
+
+static uint8_t
+servo_to_channel(robot_servo_t servo)
+{
+    if (servo < SERVO1 || servo > SERVO6)
+    {
+        return 0xFF;
+    }
+
+    return (uint8_t)servo;
+}
+
+// NOTE: Mirar esta funcion para saber como funciona, ENTENDERLA
+static uint16_t
+angle_to_ticks(uint16_t angle)
+{
+    uint32_t pulse_us = SERVO_MIN_PULSE_US;
+    pulse_us += ((uint32_t)angle * (SERVO_MAX_PULSE_US - SERVO_MIN_PULSE_US)) /
+                SERVO_MAX_ANGLE;
+
+    return (uint16_t)((pulse_us * 4096U) / PCA9685_PWM_PERIOD_US);
+}
 
 void 
 robot_init()
@@ -82,32 +132,36 @@ robot_init()
 }
 
 void
-move_servo(robot_servo_t servo)
+move_servo(robot_servo_t servo, robot_move_t move)
 { 
-    switch (servo)
+    uint8_t channel = servo_to_channel(servo);
+
+    if (channel == 0xFF)
     {
-        case SERVO1:
+        ESP_LOGW(TAG, "Servo invalido: %d", servo);
+        return;
+    }
+    int next_angle = (int)servo_angle[channel];
+    switch (move)
+    {
+        case HORARIO:
             /* code */
-            break;
-        case SERVO2:
+            next_angle += SERVO_STEP;
+        case ANTIHORARIO:
             /* code */
-            break;
-        case SERVO3:
-            /* code */
-            break;
-        case SERVO4:
-            /* code */
-            break;
-        case SERVO5:
-            /* code */
-            break;
-        case SERVO6:
-            /* code */
-            break;
+            next_angle -= SERVO_STEP;
         
         default:
             break;
+            ESP_LOGW(TAG, "Direccion invalida: %d", move);
     }
+    servo_angle[channel] = clamp_angle(next_angle);
 
+    uint16_t ticks = angle_to_ticks(servo_angle[channel]);
+    canal_servo[0] = PCA9685_SERVO_BASE_REG + (uint8_t)(4U * channel);
+    canal_servo[1] = 0x00;
+    canal_servo[2] = 0x00;
+    canal_servo[3] = (uint8_t)(ticks & 0xFFU);
+    canal_servo[4] = (uint8_t)((ticks >> 8) & 0xFFU);
     i2c_master_transmit(dev_handle, canal_servo, sizeof(canal_servo), -1);
 }

@@ -19,7 +19,8 @@ typedef enum
     SERVO3,
     SERVO4,
     SERVO5,
-    SERVO6
+    SERVO6,
+    ERROR_SERVO,
 } robot_servo_t;
 
 typedef enum
@@ -30,7 +31,7 @@ typedef enum
 } robot_move_t;
 
 void robot_init();
-void move_servo(robot_servo_t giro);
+void move_servo(robot_servo_t servo, robot_move_t move);
 
 #ifdef __cplusplus
 }
