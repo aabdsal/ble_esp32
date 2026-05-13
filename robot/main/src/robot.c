@@ -6,6 +6,10 @@ static const gpio_num_t LED = GPIO_NUM_5;
 static const gpio_num_t SDA_PIN = GPIO_NUM_5;
 static const gpio_num_t SCL_PIN = GPIO_NUM_5;
 
+//    NOTE:
+//    La ESP32 manda comandos al PCA9685.
+//    El PCA9685 ya está diseñado para ser slave I2C.
+//    Por eso la ESP32 debe ir en modo master y escribir registros del PCA9685.
 i2c_master_dev_handle_t dev_handle;
 
 uint8_t canal_servo[] = {0x06, 0x00, 0x00, 0xCD, 0x00};

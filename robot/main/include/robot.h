@@ -24,13 +24,10 @@ typedef enum
 
 typedef enum
 {
-    READY,
-    HOME,
     HORARIO,
     ANTIHORARIO,
     ERROR,
-    UNKOWN
-} robot_state_t;
+} robot_move_t;
 
 void robot_init();
 void move_servo(robot_servo_t giro);

@@ -7,6 +7,7 @@
 #include "services/gatt/ble_svc_gatt.h"
 #include "services/ans/ble_svc_ans.h"
 #include "gatt_svr.h"
+#include "robot.h"
 
 /* Client Characteristic Configuration Descriptor = CCCD */
 /* Maximum number of characteristics with the notify flag */
@@ -17,7 +18,8 @@ static const char *toto = "TOTO";
 static const char *mando = "MANDO";
 static const char *robot = "ROBOT";
 
-static robot_state_t status_val;
+static robot_move_t status_val;
+static robot_servo_t servo_val;
 
 static const ble_uuid128_t robot_controller_uuid =
     BLE_UUID128_INIT(0xaa, 0xaa, 0xaa, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -130,15 +132,19 @@ static int gatt_svc_access(uint16_t conn_handle, uint16_t attr_handle,
             }
             traducido[len] = '\0';
             
-            if (strcmp(traducido, "MOVE") == 0)
+            if (strcmp(traducido, "S1") == 0)
             {
-                status_val = MOVE;
+                servo_val = SERVO1;
             }
             if (strcmp(traducido, "HOME") == 0)
             {
                 status_val = HOME;
             }
 
+            if (strcmp(traducido, "H") == 0)
+            {
+                move_servo(servo_val, "H"/"A")
+            }
             ESP_LOGI(robot, "Has escrit aso prim: %s", traducido);
             
             rc = ble_gatts_notify(conn_handle, status_val);
