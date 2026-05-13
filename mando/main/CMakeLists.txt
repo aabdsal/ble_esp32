@@ -1,4 +1,8 @@
 idf_component_register(
-  SRC_DIRS "src" "."
-  INCLUDE_DIRS "include"
+    SRCS 
+        "main.c"
+        "botones.c"
+        "ble_client.c"
+    INCLUDE_DIRS "."
+    REQUIRES bt nvs_flash
 )
