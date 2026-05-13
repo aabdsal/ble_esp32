@@ -2,8 +2,7 @@
 #include "freertos/task.h"
 #include "gap_svc.h"
 #include "gatt_svr.h"
-#include "gpio_robot.h"
-#include "i2c_servos.h"
+#include "robot.h"
 
 static const char *tag = "NimBLE_BLE_PRPH";
 
@@ -97,7 +96,9 @@ app_main(void)
     {
         ESP_LOGE(tag, "scli_init() failed");
     }
-
+    
+    robot_init();
+    
 #if MYNEWT_VAL(BLE_EATT_CHAN_NUM) > 0
     bearers = 0;
     for (int i = 0; i < MYNEWT_VAL(BLE_EATT_CHAN_NUM); i++) 
@@ -105,4 +106,5 @@ app_main(void)
         cids[i] = 0;
     }
 #endif
+    
 }

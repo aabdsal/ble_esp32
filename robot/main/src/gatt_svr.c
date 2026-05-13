@@ -12,7 +12,10 @@
 /* Maximum number of characteristics with the notify flag */
 #define MAX_NOTIFY 5
 
-static const char *tag = "NimBLE_BLE_PRPH";
+
+static const char *toto = "TOTO";
+static const char *mando = "MANDO";
+static const char *robot = "ROBOT";
 
 static robot_state_t status_val;
 
@@ -50,23 +53,12 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] =
                 .access_cb = gatt_svc_access,
                 .flags = BLE_GATT_CHR_F_WRITE, 
                 .val_handle = &command_chr_val_handle,
-                /*.descriptors = (struct ble_gatt_dsc_def[])
-                { 
-                    {
-                      .uuid = &gatt_svr_dsc_uuid.u,
-                      .att_flags = BLE_ATT_F_READ,
-                      .access_cb = gatt_svc_access,
-                    }
-                },
-                {
-                    0, No more descriptors 
-                }*/
             }, 
             {
                 /* Status characteristic: readable from BLE client */
                 .uuid = &status_chr_uuid.u,
                 .access_cb = gatt_svc_access,
-                .flags = BLE_GATT_CHR_F_READ, 
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY, 
                 .val_handle = &status_chr_val_handle,
             },
             {
@@ -126,7 +118,7 @@ static int gatt_svc_access(uint16_t conn_handle, uint16_t attr_handle,
             
             if (rc != 0)            
             {                
-                ESP_LOGE(tag, "Error decodificando el mensaje, rc=%d", rc);                
+                ESP_LOGE(toto, "Error decodificando el mensaje, rc=%d", rc);                
                 return BLE_ATT_ERR_UNLIKELY;            
             }
 
@@ -147,8 +139,15 @@ static int gatt_svc_access(uint16_t conn_handle, uint16_t attr_handle,
                 status_val = HOME;
             }
 
-            ESP_LOGI(tag, "Has escrit aso prim: %s", traducido);
+            ESP_LOGI(robot, "Has escrit aso prim: %s", traducido);
             
+            rc = ble_gatts_notify(conn_handle, status_val);
+            if (rc != 0)
+            {
+                ESP_LOGE(toto, "Error notificando el mensaje, rc=%d", rc);                
+                return BLE_ATT_ERR_UNLIKELY;            
+            }
+
             return 0;
 
         case BLE_GATT_ACCESS_OP_READ_CHR:
@@ -159,7 +158,7 @@ static int gatt_svc_access(uint16_t conn_handle, uint16_t attr_handle,
             }
             
             os_mbuf_append(ctxt->om, &status_val, sizeof(uint8_t));
-            ESP_LOGI(tag, "Operacion de lectura exitososa, se parlar?");
+            ESP_LOGI(mando, "Operacion de lectura exitososa, se parlar?");
             
             return 0;
         
