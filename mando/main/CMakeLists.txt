@@ -1,3 +1,4 @@
-idf_component_register(SRCS "main.c" "src/bluetooth.c" 
-                    REQUIRES bt 
-                    INCLUDE_DIRS "." "include" "src")
+idf_component_register(
+  SRC_DIRS "src" "."
+  INCLUDE_DIRS "include"
+)
