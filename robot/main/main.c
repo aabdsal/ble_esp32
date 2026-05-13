@@ -1,5 +1,9 @@
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "gap_svc.h"
 #include "gatt_svr.h"
+#include "gpio_robot.h"
+#include "i2c_servos.h"
 
 static const char *tag = "NimBLE_BLE_PRPH";
 
@@ -9,17 +13,17 @@ bleprph_host_task(void *param)
     ESP_LOGI(tag, "BLE Host Task Started");
     /* This function will return only when nimble_port_stop() is executed */
     nimble_port_run();
-
     nimble_port_freertos_deinit();
 }
 
 void
 app_main(void)
 {
-    int rc;
+    int rc; // returned code
 
     /* Initialize NVS — it is used to store PHY calibration data */
-    esp_err_t ret = nvs_flash_init();
+    esp_err_t ret = nvs_flash_init(); // return
+    
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) 
     {
         ESP_ERROR_CHECK(nvs_flash_erase());

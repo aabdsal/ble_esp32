@@ -11,6 +11,17 @@
 extern "C" {
 #endif
 
+typedef enum
+{
+    READY,
+    HOME,
+    STOP,
+    MOVE,
+    MOVING,
+    ERROR,
+    UNKOWN
+} robot_state_t;
+
 struct ble_hs_cfg;
 struct ble_gatt_register_ctxt;
 

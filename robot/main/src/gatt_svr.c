@@ -8,21 +8,27 @@
 #include "services/ans/ble_svc_ans.h"
 #include "gatt_svr.h"
 
-/*** Maximum number of characteristics with the notify flag ***/
+/* Client Characteristic Configuration Descriptor = CCCD */
+/* Maximum number of characteristics with the notify flag */
 #define MAX_NOTIFY 5
 
 static const char *tag = "NimBLE_BLE_PRPH";
 
-static const ble_uuid128_t mi_uuid_para_servicio =
+static robot_state_t status_val;
+
+static const ble_uuid128_t robot_controller_uuid =
     BLE_UUID128_INIT(0xaa, 0xaa, 0xaa, 0x00, 0x00, 0x00, 0x00, 0x00,
                      0xCA, 0x00, 0x00, 0xea, 0x00, 0xea, 0x00, 0xea);
 
-/* A characteristic that can be subscribed to */
-static uint8_t gatt_svr_chr_val;
-static uint16_t gatt_svr_chr_val_handle;
-static const ble_uuid128_t mi_uuid_para_caracteristica =
+static uint16_t command_chr_val_handle;
+static const ble_uuid128_t command_chr_uuid =
     BLE_UUID128_INIT(0xbb, 0xbb, 0xbb, 0xcc, 0xcc, 0xcc, 0xcc, 0xaa,
                      0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xea, 0x00, 0xea);
+
+static uint16_t status_chr_val_handle;
+static const ble_uuid128_t status_chr_uuid =
+    BLE_UUID128_INIT(0x13, 0x13, 0x13, 0x47, 0x47, 0x47, 0x47, 0xaa,
+                     0x0, 0x0, 0x0, 0x0, 0x0, 0xea, 0x35, 0xea);
 
 /* A custom descriptor */
 static uint8_t gatt_svr_dsc_val;
@@ -35,14 +41,15 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] =
     {
         /*** Robot Control Service ***/
         .type = BLE_GATT_SVC_TYPE_PRIMARY,
-        .uuid = &mi_uuid_para_servicio.u,
-        .characteristics = (struct ble_gatt_chr_def[]) { 
+        .uuid = &robot_controller_uuid.u,
+        .characteristics = (struct ble_gatt_chr_def[]) 
+        { 
             {
-                /*** Command characteristic: writable from BLE client ***/
-                .uuid = &mi_uuid_para_caracteristica.u,
+                /* Command characteristic: writable from BLE client */
+                .uuid = &command_chr_uuid.u,
                 .access_cb = gatt_svc_access,
                 .flags = BLE_GATT_CHR_F_WRITE, 
-                .val_handle = &gatt_svr_chr_val_handle,
+                .val_handle = &command_chr_val_handle,
                 /*.descriptors = (struct ble_gatt_dsc_def[])
                 { 
                     {
@@ -56,7 +63,14 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] =
                 }*/
             }, 
             {
-                0, /* No more characteristics in this service. */
+                /* Status characteristic: readable from BLE client */
+                .uuid = &status_chr_uuid.u,
+                .access_cb = gatt_svc_access,
+                .flags = BLE_GATT_CHR_F_READ, 
+                .val_handle = &status_chr_val_handle,
+            },
+            {
+                0,
             }
         },
     },
@@ -100,8 +114,6 @@ static int gatt_svr_write(struct os_mbuf *om, uint16_t min_len, uint16_t max_len
 static int gatt_svc_access(uint16_t conn_handle, uint16_t attr_handle,
                 struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
-
-    const ble_uuid_t *uuid;
     int rc;
     uint8_t mensaje[20];
     uint16_t len;
@@ -126,9 +138,31 @@ static int gatt_svc_access(uint16_t conn_handle, uint16_t attr_handle,
             }
             traducido[len] = '\0';
             
-            ESP_LOGI(tag, "Mensaje que llega desde el BLE Scanner: %s", traducido);
+            if (strcmp(traducido, "MOVE") == 0)
+            {
+                status_val = MOVE;
+            }
+            if (strcmp(traducido, "HOME") == 0)
+            {
+                status_val = HOME;
+            }
+
+            ESP_LOGI(tag, "Has escrit aso prim: %s", traducido);
             
             return 0;
+
+        case BLE_GATT_ACCESS_OP_READ_CHR:
+            
+            if (attr_handle != status_chr_val_handle)
+            {
+                return BLE_ATT_ERR_UNLIKELY;
+            }
+            
+            os_mbuf_append(ctxt->om, &status_val, sizeof(uint8_t));
+            ESP_LOGI(tag, "Operacion de lectura exitososa, se parlar?");
+            
+            return 0;
+        
         default:
             return BLE_ATT_ERR_UNLIKELY;      
     }
@@ -188,6 +222,7 @@ int gatt_svr_init(void)
 
     /* Setting a value for the read-only descriptor */
     gatt_svr_dsc_val = 0x99;
+    status_val = READY;
 
     return 0;
 }
