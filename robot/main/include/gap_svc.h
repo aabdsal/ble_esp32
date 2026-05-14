@@ -34,39 +34,46 @@ extern "C" {
  * @return None
  */
 void ble_store_config_init(void);
+
 /**
  * @brief Callback de reinicio invocado por NimBLE cuando el host debe reiniciarse
  * @param reason Motivo del reinicio reportado por NimBLE
  */
 void gap_svc_on_reset(int reason);
+
 /**
  * @brief Callback de sincronizacion invocado cuando NimBLE esta listo para anunciar
  * @param None
  * @return None
  */
 void gap_svc_on_sync(void);
+
 /**
  * @brief Inicializa NVS, el host de NimBLE y el estado del servicio GAP
  * @param None
  * @return None
  */
 void gap_svc_init(void);
+
 /**
  * @brief Establece el nombre del dispositivo BLE anunciado por el servicio GAP
  * @param name Nuevo nombre del dispositivo
  */
 void gap_svc_set_device_name(const char *name);
+
 /**
  * @brief Inicia la tarea del host de NimBLE
  * @param None
  * @return None
  */
 void gap_svc_start(void);
+
 /**
  * @brief Habilita o deshabilita la visibilidad BLE del dispositivo
  * @param enabled true para anunciar BLE, false para detener anuncio
  */
 void gap_svc_set_enabled(bool enabled);
+
 /**
  * @brief Consulta si BLE esta habilitado para anunciar
  * @param None

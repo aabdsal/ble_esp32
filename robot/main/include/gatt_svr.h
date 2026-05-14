@@ -32,12 +32,14 @@ struct ble_gatt_register_ctxt;
 
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
+
 /**
  * @brief Callback usado por NimBLE al registrar servicios y atributos GATT
  * @param ctxt Contexto de registro proporcionado por NimBLE
  * @param arg Argumento de usuario, no usado
  */
 void gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg);
+
 /**
  * @brief Inicializa el servidor GATT personalizado y registra sus servicios
  * @param None

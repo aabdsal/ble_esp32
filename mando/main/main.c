@@ -7,6 +7,7 @@
 void app_main(void)
 {
     botones_init();
+    gap_svc_set_device_name("ESP32-S3 Mando");
     ble_client_init();
 
     uint8_t b_sel, b_ok, b_r, b_l;

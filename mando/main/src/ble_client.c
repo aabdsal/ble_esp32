@@ -39,7 +39,8 @@ static int gap_event(struct ble_gap_event *event, void *arg)
 
                     ble_gap_disc_cancel();
 
-                    struct ble_gap_conn_params conn_params = {
+                    struct ble_gap_conn_params conn_params = 
+                    {
                         .scan_itvl = 0x0010,
                         .scan_window = 0x0010,
                         .itvl_min = 0x0018,
@@ -117,6 +118,16 @@ void ble_client_init(void)
     nimble_port_freertos_init(ble_host_task);
 }
 
+void gap_svc_set_device_name(const char * name)
+{
+    int rc = ble_svc_gap_device_name_set(name);
+    
+    if (rc != 0) 
+    {
+        ESP_LOGE(TAG, "ble_svc_gap_device_name_set fallo, rc=%d", rc);
+    }
+}
+
 /* ---------- ENVÍO ---------- */
 
 void ble_send(char *msg)
@@ -129,13 +140,12 @@ void ble_send(char *msg)
     struct os_mbuf *om = ble_hs_mbuf_from_flat(msg, strlen(msg));
 
     int rc = ble_gattc_write_no_rsp(conn_handle, char_handle, om);
-
+    
     if (rc != 0)
     {
         ESP_LOGE(TAG, "Error enviando: %d", rc);
     }
-    else
-    {
-        ESP_LOGI(TAG, "Enviado: %s", msg);
-    }
+    
+    ESP_LOGI(TAG, "Enviado: %s", msg);
+    
 }
