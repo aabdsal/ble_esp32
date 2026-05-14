@@ -56,6 +56,12 @@ void robot_init(void);
  * @param move Direccion del movimiento
  */
 void move_servo(robot_servo_t servo, robot_move_t move);
+/**
+ * @brief Lee el estado del interruptor, y enciende o apaga el bluetooth del robot en consecuencia
+ * @param None
+ * @return None
+ */
+void check_interruptor_and_control_bluetooth(void);
 
 #ifdef __cplusplus
 }

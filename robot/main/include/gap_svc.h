@@ -17,6 +17,7 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 
+#include <stdbool.h>
 #include "nvs_flash.h"
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
@@ -61,6 +62,17 @@ void gap_svc_set_device_name(const char *name);
  * @return None
  */
 void gap_svc_start(void);
+/**
+ * @brief Habilita o deshabilita la visibilidad BLE del dispositivo
+ * @param enabled true para anunciar BLE, false para detener anuncio
+ */
+void gap_svc_set_enabled(bool enabled);
+/**
+ * @brief Consulta si BLE esta habilitado para anunciar
+ * @param None
+ * @return true si BLE esta habilitado, false en caso contrario
+ */
+bool gap_svc_get_enabled(void);
 
 #ifdef __cplusplus
 }

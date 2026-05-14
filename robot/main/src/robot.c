@@ -11,10 +11,13 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "driver/i2c_master.h"
 #include "robot.h"
+#include "gap_svc.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -50,6 +53,10 @@ i2c_master_dev_handle_t dev_handle;
 static uint16_t servo_angle[SERVO_COUNT] = {90, 90, 90, 90, 90, 90};
 static uint8_t canal_servo[] = {PCA9685_SERVO_BASE_REG, 0x00, 0x00, 0x00, 0x00};
 
+static bool volatile interruptor_activado = false;
+static portMUX_TYPE interruptor_mux = portMUX_INITIALIZER_UNLOCKED;
+static volatile TickType_t last_button_tick = 0;
+static TaskHandle_t bluetooth_control_task_handle = NULL;
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -105,18 +112,76 @@ static uint16_t angle_to_ticks(uint16_t angle)
 
 /* Exported functions --------------------------------------------------------*/
 
+
+static void IRAM_ATTR gpio_handler_isr(void *arg)
+{
+    uint32_t pin = (uint32_t)arg;
+    if (pin == BUTTON_PIN) 
+    {
+        TickType_t now_tick = xTaskGetTickCountFromISR();
+        bool retardo;
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        portENTER_CRITICAL_ISR(&interruptor_mux);
+        retardo = (now_tick - last_button_tick) < pdMS_TO_TICKS(150);
+        if (!retardo)
+        {
+            last_button_tick = now_tick;
+            interruptor_activado = !interruptor_activado;
+            if (bluetooth_control_task_handle != NULL)
+            {
+                vTaskNotifyGiveFromISR(bluetooth_control_task_handle, &xHigherPriorityTaskWoken);
+            }
+        }
+        portEXIT_CRITICAL_ISR(&interruptor_mux);
+
+        if (xHigherPriorityTaskWoken == pdTRUE)
+        {
+            portYIELD_FROM_ISR();
+        }
+    }
+}
+
+void bluetooth_control_task(void *arg)
+{
+    bool last_applied_state = !interruptor_activado;
+    for(;;)
+    {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+        bool activado;
+        portENTER_CRITICAL(&interruptor_mux);
+        activado = interruptor_activado;
+        portEXIT_CRITICAL(&interruptor_mux);
+
+        if (activado != last_applied_state)
+        {
+            gap_svc_set_enabled(activado);
+
+            if (activado)
+            {
+                ESP_LOGI(tag, "Bluetooth activado");
+            }
+            else
+            {
+                ESP_LOGI(tag, "Bluetooth desactivado");
+            }
+
+            last_applied_state = activado;
+        }
+    }
+}
+
 void robot_init()
 {
     ESP_LOGI(tag, "Iniciando configuracion del boton, led y PCA9685 para el robot");
-    gpio_config_t button_conf = 
+    gpio_config_t interruptor_conf = 
     {
         .pin_bit_mask = 1ULL << BUTTON_PIN, 
         .mode = GPIO_MODE_INPUT,
         .pull_up_en = GPIO_PULLUP_ENABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = GPIO_INTR_DISABLE
+        .intr_type = GPIO_INTR_NEGEDGE
     };
-
     gpio_config_t led_conf = 
     {
         .pin_bit_mask = 1ULL << LED_PIN, 
@@ -128,16 +193,46 @@ void robot_init()
 
     esp_err_t ret;
 
-    ret = gpio_config(&button_conf);
+    ret = gpio_config(&interruptor_conf);
     if (ret != ESP_OK) 
     {
-        ESP_LOGE(tag, "gpio_config(button_conf) fallo: %s", esp_err_to_name(ret));
+        ESP_LOGE(tag, "gpio_config(interruptor_conf) fallo: %s", esp_err_to_name(ret));
     }
 
     ret = gpio_config(&led_conf);
     if (ret != ESP_OK) 
     {
         ESP_LOGE(tag, "gpio_config(led_conf) fallo: %s", esp_err_to_name(ret));
+    }
+
+    portENTER_CRITICAL(&interruptor_mux);
+    interruptor_activado = (gpio_get_level(BUTTON_PIN) == 0);
+    portEXIT_CRITICAL(&interruptor_mux);
+
+    gap_svc_set_enabled(interruptor_activado);
+
+    BaseType_t bluetooth_task = xTaskCreate(
+        bluetooth_control_task,
+        "bluetooth_control_task",
+        2048,
+        NULL,
+        4,
+        &bluetooth_control_task_handle);
+    if (bluetooth_task != pdPASS)
+    {
+        ESP_LOGE(tag, "No se pudo crear bluetooth_control_task");
+    }
+
+    ret = gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
+    if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE)
+    {
+        ESP_LOGE(tag, "gpio_install_isr_service() fallo: %s", esp_err_to_name(ret));
+    }
+
+    ret = gpio_isr_handler_add(BUTTON_PIN, gpio_handler_isr, (void *)BUTTON_PIN);
+    if (ret != ESP_OK)
+    {
+        ESP_LOGE(tag, "gpio_isr_handler_add() fallo: %s", esp_err_to_name(ret));
     }
 
     // Configura la comunicacion del bus Inter-Integrated Circuit 
@@ -238,6 +333,22 @@ void move_servo(robot_servo_t servo, robot_move_t move)
     if (ret != ESP_OK) 
     {
         ESP_LOGE(tag, "i2c_master_transmit(canal_servo) fallo: %s", esp_err_to_name(ret));
+    }
+}
+
+void check_interruptor_and_control_bluetooth(void)
+{
+
+    int interruptor_state = gpio_get_level(BUTTON_PIN);
+    if (interruptor_state == 0) 
+    {
+        ESP_LOGI(tag, "Interruptor activado, encendiendo Bluetooth");
+        gap_svc_set_enabled(true);
+    } 
+    else 
+    {
+        ESP_LOGI(tag, "Interruptor desactivado, apagando Bluetooth");
+        gap_svc_set_enabled(false);
     }
 }
 

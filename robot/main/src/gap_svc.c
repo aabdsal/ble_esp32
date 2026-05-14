@@ -8,6 +8,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/portmacro.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "nimble/nimble_port.h"
@@ -30,6 +32,9 @@
 static const char *tag = "GAP-BLE";
 static int gap_svc_gap_event(struct ble_gap_event *event, void *arg);
 static uint8_t own_addr_type;
+
+static bool s_ble_enabled = false;
+static portMUX_TYPE ble_mux = portMUX_INITIALIZER_UNLOCKED;
 
 void ble_store_config_init(void);
 
@@ -67,6 +72,12 @@ static void gap_svc_print_conn_desc(struct ble_gap_conn_desc *desc)
  */
 static void gap_svc_advertise(void)
 {
+    bool ble_active = gap_svc_get_enabled();
+    if (!ble_active)
+    {
+        return;
+    }
+
     struct ble_gap_adv_params adv_params;
     struct ble_hs_adv_fields fields;
     const char *name;
@@ -137,6 +148,7 @@ static int gap_svc_gap_event(struct ble_gap_event *event, void *arg)
 {
     struct ble_gap_conn_desc desc;
     int rc;
+    bool ble_active;
 
     switch (event->type) 
     {
@@ -156,7 +168,13 @@ static int gap_svc_gap_event(struct ble_gap_event *event, void *arg)
             if (event->connect.status != 0) 
             {
                 /* La conexion fallo; reanuda el anuncio. */
-                gap_svc_advertise();
+                portENTER_CRITICAL(&ble_mux);
+                ble_active = s_ble_enabled;
+                portEXIT_CRITICAL(&ble_mux);
+                if (ble_active)
+                {
+                    gap_svc_advertise();
+                }
             }
 
             return 0;
@@ -167,7 +185,13 @@ static int gap_svc_gap_event(struct ble_gap_event *event, void *arg)
             MODLOG_DFLT(INFO, "\n");
 
             /* La conexion termino; reanuda el anuncio. */
-            gap_svc_advertise();
+            portENTER_CRITICAL(&ble_mux);
+            ble_active = s_ble_enabled;
+            portEXIT_CRITICAL(&ble_mux);
+            if (ble_active)
+            {
+                gap_svc_advertise();
+            }
             return 0;
 
         case BLE_GAP_EVENT_CONN_UPDATE:
@@ -183,7 +207,13 @@ static int gap_svc_gap_event(struct ble_gap_event *event, void *arg)
         case BLE_GAP_EVENT_ADV_COMPLETE:
             MODLOG_DFLT(INFO, "advertise complete; reason=%d",
                         event->adv_complete.reason);
-            gap_svc_advertise();
+            portENTER_CRITICAL(&ble_mux);
+            ble_active = s_ble_enabled;
+            portEXIT_CRITICAL(&ble_mux);
+            if (ble_active)
+            {
+                gap_svc_advertise();
+            }
             return 0;
 
         case BLE_GAP_EVENT_ENC_CHANGE:
@@ -286,8 +316,15 @@ void gap_svc_on_sync(void)
     MODLOG_DFLT(INFO, "Device Address: ");
     print_addr(addr_val);
     MODLOG_DFLT(INFO, "\n");
-    /* Inicia el anuncio. */
-    gap_svc_advertise();
+
+    portENTER_CRITICAL(&ble_mux);
+    bool ble_active = s_ble_enabled;
+    portEXIT_CRITICAL(&ble_mux);
+    if (ble_active)
+    {
+        /* Inicia el anuncio. */
+        gap_svc_advertise();
+    }
 }
 
 /**
@@ -306,6 +343,45 @@ void gap_svc_host_task(void *param)
 void gap_svc_start(void)
 {
     nimble_port_freertos_init(gap_svc_host_task);
+}
+
+void gap_svc_set_enabled(bool enabled)
+{
+    portENTER_CRITICAL(&ble_mux);
+    s_ble_enabled = enabled;
+    portEXIT_CRITICAL(&ble_mux);
+
+    if (!ble_hs_synced())
+    {
+        return;
+    }
+
+    if (enabled)
+    {
+        if (!ble_gap_adv_active())
+        {
+            gap_svc_advertise();
+        }
+        return;
+    }
+
+    if (ble_gap_adv_active())
+    {
+        int rc = ble_gap_adv_stop();
+        if (rc != 0)
+        {
+            ESP_LOGW(tag, "ble_gap_adv_stop fallo, rc=%d", rc);
+        }
+    }
+}
+
+bool gap_svc_get_enabled(void)
+{
+    bool ble_active;
+    portENTER_CRITICAL(&ble_mux);
+    ble_active = s_ble_enabled;
+    portEXIT_CRITICAL(&ble_mux);
+    return ble_active;
 }
 
 void gap_svc_set_device_name(const char * name)
