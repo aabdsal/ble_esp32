@@ -1,17 +1,21 @@
-#ifndef GPIO_ROBOT_H
-#define GPIO_ROBOT_H
+/**
+ * @file    robot.h
+ * @author  BLE-SEM
+ * @version V0.0
+ * @date    2026-05-14
+ * @brief   Interfaz publica de control del robot
+ */
+
+/* Define to prevent recursive inclusion -------------------------------------*/
+
+#ifndef ROBOT_H
+#define ROBOT_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include "driver/gpio.h"
-#include "esp_log.h"
-#include "driver/i2c_master.h"
-
+/* Exported types ------------------------------------------------------------*/
 typedef enum
 {
     SERVO1,
@@ -19,24 +23,50 @@ typedef enum
     SERVO3,
     SERVO4,
     SERVO5,
-    SERVO6
+    SERVO6,
+    ERROR_SERVO,
 } robot_servo_t;
+
+typedef enum
+{
+    HORARIO,
+    ANTIHORARIO,
+    ERROR,
+} robot_move_t;
 
 typedef enum
 {
     READY,
     HOME,
-    HORARIO,
-    ANTIHORARIO,
-    ERROR,
-    UNKOWN
-} robot_state_t;
+    UNKNOWN,
+} robot_status_t;
 
-void robot_init();
-void move_servo(robot_servo_t giro);
+/* Exported constants --------------------------------------------------------*/
+/* Exported macro ------------------------------------------------------------*/
+/* Exported functions --------------------------------------------------------*/
+/**
+ * @brief Inicializa los recursos de GPIO e I2C usados por el robot
+ * @param None
+ * @return None
+ */
+void robot_init(void);
+/**
+ * @brief Mueve un servo un paso en la direccion solicitada
+ * @param servo Identificador del servo
+ * @param move Direccion del movimiento
+ */
+void move_servo(robot_servo_t servo, robot_move_t move);
+/**
+ * @brief Lee el estado del interruptor, y enciende o apaga el bluetooth del robot en consecuencia
+ * @param None
+ * @return None
+ */
+void check_interruptor_and_control_bluetooth(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* GPIO_ROBOT_H */
+#endif /* ROBOT_H */
+
+/* End of file ****************************************************************/
