@@ -1,7 +1,6 @@
+#include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include <stdio.h>
-
 #include "botones.h"
 #include "ble_client.h"
 
@@ -10,10 +9,10 @@ void app_main(void)
     botones_init();
     ble_client_init();
 
-    int b_sel, b_ok, b_r, b_l;
+    uint8_t b_sel, b_ok, b_r, b_l;
     int servo = 1;
 
-    while (1)
+    for(;;)
     {
         botones_leer(&b_sel, &b_ok, &b_r, &b_l);
 

@@ -1,6 +1,7 @@
 #include <string.h>
 #include "ble_client.h"
 #include "esp_log.h"
+#include "nvs_flash.h"
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
@@ -12,15 +13,6 @@ static const char *TAG = "BLE_CLIENT";
 static uint16_t conn_handle = 0;
 static uint16_t char_handle = 0;
 
-/* UUIDs del robot */
-/*static const ble_uuid128_t service_uuid =
-    BLE_UUID128_INIT(0xaa,0xaa,0xaa,0x00,0x00,0x00,0x00,0x00,
-                     0xCA,0x00,0x00,0xea,0x00,0xea,0x00,0xea);
-
-static const ble_uuid128_t char_uuid =
-    BLE_UUID128_INIT(0xbb,0xbb,0xbb,0xcc,0xcc,0xcc,0xcc,0xaa,
-                     0xaa,0xaa,0xaa,0xaa,0xaa,0xea,0x00,0xea);
-*/
 /* ---------- TASK BLE (ARREGLADO) ---------- */
 static void ble_host_task(void *param)
 {
@@ -74,7 +66,7 @@ static int gap_event(struct ble_gap_event *event, void *arg)
                 conn_handle = event->connect.conn_handle;
                 ESP_LOGI(TAG, "Conectado al robot!");
 
-                // ⚠️ IMPORTANTE: ponemos handle fijo (simplificación práctica)
+                // IMPORTANTE: ponemos handle fijo (simplificación práctica)
                 char_handle = 12;  // <-- este valor puede cambiar
             }
             else
@@ -95,22 +87,29 @@ static void ble_app_on_sync(void)
 {
     ESP_LOGI(TAG, "Escaneando BLE...");
 
-    struct ble_gap_disc_params disc_params = {
+    struct ble_gap_disc_params disc_params = 
+    {
         .itvl = 0,
         .window = 0,
         .filter_policy = 0,
         .passive = 0
     };
 
-    ble_gap_disc(BLE_OWN_ADDR_PUBLIC,
-                 0,
-                 &disc_params,
-                 gap_event,
-                 NULL);
+    ble_gap_disc(BLE_OWN_ADDR_PUBLIC, 0,
+                 &disc_params, gap_event, NULL);
 }
 
 void ble_client_init(void)
 {
+
+    esp_err_t ret = nvs_flash_init(); /* Inicializa NVS: se usa para guardar datos de calibracion PHY */
+    
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) 
+    {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+
     nimble_port_init();
 
     ble_hs_cfg.sync_cb = ble_app_on_sync;

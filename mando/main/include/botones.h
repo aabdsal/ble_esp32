@@ -9,6 +9,6 @@
 #define BTN_LEFT   GPIO_NUM_7
 
 void botones_init(void);
-void botones_leer(int *b_sel, int *b_ok, int *b_r, int *b_l);
+void botones_leer(uint8_t *b_sel, uint8_t *b_ok, uint8_t *b_r, uint8_t *b_l);
 
 #endif
