@@ -191,11 +191,6 @@ static int gap_svc_gap_event(struct ble_gap_event *event, void *arg)
             else
             {
                 s_conn_handle = BLE_HS_CONN_HANDLE_NONE;
-
-                /*
-                 * Si fallo una conexion pero el interruptor sigue en ON,
-                 * volvemos a anunciarnos.
-                 */
                 if (gap_svc_get_enabled())
                 {
                     gap_svc_advertise();
@@ -211,11 +206,6 @@ static int gap_svc_gap_event(struct ble_gap_event *event, void *arg)
             );
 
             s_conn_handle = BLE_HS_CONN_HANDLE_NONE;
-
-            /*
-             * Si se desconecta el cliente y el interruptor sigue ON,
-             * volvemos a anunciar.
-             */
             if (gap_svc_get_enabled())
             {
                 gap_svc_advertise();
@@ -229,10 +219,6 @@ static int gap_svc_gap_event(struct ble_gap_event *event, void *arg)
                 event->adv_complete.reason
             );
 
-            /*
-             * Si el advertising termina por algun motivo y el interruptor sigue ON,
-             * lo arrancamos otra vez.
-             */
             if (gap_svc_get_enabled())
             {
                 gap_svc_advertise();
@@ -429,7 +415,6 @@ void gap_svc_set_device_name(const char *name)
 
 void gap_svc_init(void)
 {
-
     esp_err_t ret = nvs_flash_init(); /* Inicializa NVS: se usa para guardar datos de calibracion PHY */
     
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) 
