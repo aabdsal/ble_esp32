@@ -74,6 +74,16 @@ void gap_svc_set_enabled(bool enabled);
  */
 bool gap_svc_get_enabled(void);
 
+
+void gap_svc_advertise(void);
+
+
+void gap_svc_start_advertising(void);
+
+
+void gap_svc_stop_advertising(void);
+
+
 #ifdef __cplusplus
 }
 #endif
