@@ -18,8 +18,7 @@
 /* Private variables ---------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 
-void
-app_main(void)
+void app_main(void)
 {
     gap_svc_init();
     gatt_svr_init();
