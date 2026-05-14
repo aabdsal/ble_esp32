@@ -18,7 +18,7 @@
 #include "host/util/util.h"
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
-#include "esp_peripheral.h"
+// #include "esp_peripheral.h"
 
 #include "gap_svc.h"
 #include "gatt_svr.h"
@@ -46,16 +46,12 @@ static void gap_svc_print_conn_desc(struct ble_gap_conn_desc *desc)
 {
     MODLOG_DFLT(INFO, "handle = %d our_ota_addr_type = %d our_ota_addr=",
                 desc->conn_handle, desc->our_ota_addr.type);
-    print_addr(desc->our_ota_addr.val);
     MODLOG_DFLT(INFO, " our_id_addr_type = %d our_id_addr=",
                 desc->our_id_addr.type);
-    print_addr(desc->our_id_addr.val);
     MODLOG_DFLT(INFO, " peer_ota_addr_type = %d peer_ota_addr=",
                 desc->peer_ota_addr.type);
-    print_addr(desc->peer_ota_addr.val);
     MODLOG_DFLT(INFO, " peer_id_addr_type = %d peer_id_addr=",
                 desc->peer_id_addr.type);
-    print_addr(desc->peer_id_addr.val);
     MODLOG_DFLT(INFO, " conn_itvl = %d conn_latency = %d supervision_timeout = %d "
                 "encrypted = %d authenticated = %d bonded = %d\n",
                 desc->conn_itvl, desc->conn_latency,
@@ -314,7 +310,6 @@ void gap_svc_on_sync(void)
     rc = ble_hs_id_copy_addr(own_addr_type, addr_val, NULL);
 
     MODLOG_DFLT(INFO, "Device Address: ");
-    print_addr(addr_val);
     MODLOG_DFLT(INFO, "\n");
 
     portENTER_CRITICAL(&ble_mux);

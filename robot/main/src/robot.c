@@ -22,6 +22,8 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 
+#define ESP_INTR_FLAG_DEFAULT 0
+
 static const char *tag = "[ROBOT]";
 static const gpio_num_t BUTTON_PIN = GPIO_NUM_3;
 static const gpio_num_t LED_PIN = GPIO_NUM_5;
