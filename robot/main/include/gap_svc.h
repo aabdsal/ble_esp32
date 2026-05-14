@@ -1,3 +1,13 @@
+/**
+ * @file    gap_svc.h
+ * @author  BLE-SEM
+ * @version V0.0
+ * @date    2026-05-14
+ * @brief   Interfaz publica del servicio GAP
+ */
+
+/* Define to prevent recursive inclusion -------------------------------------*/
+
 #ifndef GAP_SVC_H
 #define GAP_SVC_H
 
@@ -5,23 +15,57 @@
 extern "C" {
 #endif
 
-#include "esp_log.h"
+/* Includes ------------------------------------------------------------------*/
+
 #include "nvs_flash.h"
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
-#include "host/util/util.h"
-#include "console/console.h"
-#include "services/gap/ble_svc_gap.h"
 
-/*GAP Service, GAP = Generic Access Profile*/
+/* Exported types ------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+/* Exported macro ------------------------------------------------------------*/
+/* Exported functions --------------------------------------------------------*/
 
+/**
+ * @brief Configura el backend de almacenamiento de enlaces y pares de NimBLE
+ * @param None
+ * @return None
+ */
 void ble_store_config_init(void);
-void bleprph_on_reset(int reason);
-void bleprph_on_sync(void);
+/**
+ * @brief Callback de reinicio invocado por NimBLE cuando el host debe reiniciarse
+ * @param reason Motivo del reinicio reportado por NimBLE
+ */
+void gap_svc_on_reset(int reason);
+/**
+ * @brief Callback de sincronizacion invocado cuando NimBLE esta listo para anunciar
+ * @param None
+ * @return None
+ */
+void gap_svc_on_sync(void);
+/**
+ * @brief Inicializa NVS, el host de NimBLE y el estado del servicio GAP
+ * @param None
+ * @return None
+ */
+void gap_svc_init(void);
+/**
+ * @brief Establece el nombre del dispositivo BLE anunciado por el servicio GAP
+ * @param name Nuevo nombre del dispositivo
+ */
+void gap_svc_set_device_name(const char *name);
+/**
+ * @brief Inicia la tarea del host de NimBLE
+ * @param None
+ * @return None
+ */
+void gap_svc_start(void);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* GAP_SVC_H */
+
+/* End of file ****************************************************************/
