@@ -30,7 +30,7 @@ static const char *tag = "[ROBOT]";
 
 static const gpio_num_t INTERRUPTOR_PIN = GPIO_NUM_4;
 static const gpio_num_t LED_PIN         = GPIO_NUM_3;
-// static const gpio_num_t SDA_PIN         = GPIO_NUM_8; Per a que no done els errors ixos ho he comentat
+// static const gpio_num_t SDA_PIN         = GPIO_NUM_8;
 // static const gpio_num_t SCL_PIN         = GPIO_NUM_10;
 
 #define PCA9685_SERVO_BASE_REG 0x06
@@ -206,8 +206,19 @@ void robot_init(void)
         .intr_type = GPIO_INTR_DISABLE
     };
 
-    ESP_ERROR_CHECK(gpio_config(&interruptor_conf));
-    ESP_ERROR_CHECK(gpio_config(&led_conf));
+    esp_err_t ret;
+
+    ret = gpio_config(&interruptor_conf);
+    if (ret != ESP_OK) 
+    {
+        ESP_LOGE(tag, "gpio_config(interruptor_conf) fallo: %s", esp_err_to_name(ret));
+    }
+
+    ret = gpio_config(&led_conf);
+    if (ret != ESP_OK) 
+    {
+        ESP_LOGE(tag, "gpio_config(led_conf) fallo: %s", esp_err_to_name(ret));
+    }
 
     gpio_set_level(LED_PIN, 0);
 
@@ -219,16 +230,16 @@ void robot_init(void)
 
     if (err != ESP_OK && err != ESP_ERR_INVALID_STATE)
     {
-        ESP_ERROR_CHECK(err);
+        ESP_LOGE(tag, "gpio_install_isr_service() fallo: %s", esp_err_to_name(ret));
     }
+    
+    ret = gpio_isr_handler_add(INTERRUPTOR_PIN, gpio_handler_isr,
+            (void *)(uintptr_t)INTERRUPTOR_PIN);
 
-    ESP_ERROR_CHECK(
-        gpio_isr_handler_add(
-            INTERRUPTOR_PIN,
-            gpio_handler_isr,
-            (void *)(uintptr_t)INTERRUPTOR_PIN
-        )
-    );
+    if (ret != ESP_OK)
+    {
+        ESP_LOGE(tag, "gpio_isr_handler_add() fallo: %s", esp_err_to_name(ret));
+    }
 
     xTaskCreate(
         bluetooth_control_task,
@@ -238,6 +249,68 @@ void robot_init(void)
         5,
         &bluetooth_control_task_handle
     );
+
+    /*
+    // Configura la comunicacion del bus Inter-Integrated Circuit 
+    i2c_master_bus_config_t bus_cfg = 
+    {
+        .i2c_port = I2C_NUM_0,                  // Puerto I2C, -1 para autodeteccion
+        .sda_io_num = SDA_PIN,                  
+        .scl_io_num = SCL_PIN,
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .glitch_ignore_cnt = 7,                 // Ajusta el filtrado de ruido en la senal
+        .flags.allow_pd = false,
+        .flags.enable_internal_pullup = true, 
+    };
+
+    i2c_master_bus_handle_t bus_handle;
+
+    // Configura el dispositivo concreto con el que va a hablar la ESP32
+    i2c_device_config_t dev_cfg = 
+    {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = 0x40, // Direccion del modulo PCA9685 
+        .scl_speed_hz = 100000,
+    };
+
+
+    ret = i2c_new_master_bus(&bus_cfg, &bus_handle);
+    if (ret != ESP_OK) 
+    {
+        ESP_LOGE(tag, "i2c_new_master_bus() fallo: %s", esp_err_to_name(ret));
+    }
+    ret = i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle);
+    if (ret != ESP_OK) 
+    {
+        ESP_LOGE(tag, "i2c_master_bus_add_device() fallo: %s", esp_err_to_name(ret));
+    }
+    const uint8_t mode_one_on[] = {0x00, 0x10}; // MODE1 con SLEEP = 1
+    size_t size_data_wr = sizeof(mode_one_on);
+
+    ret = i2c_master_transmit(dev_handle, mode_one_on, size_data_wr, -1);   
+    if (ret != ESP_OK) 
+    {
+        ESP_LOGE(tag, "i2c_master_transmit(mode_one_on) fallo: %s", esp_err_to_name(ret));
+    }
+    const uint8_t prescale[] = {0xFE, 121}; // PRE_SCALE = 121 (50 Hz) 
+    ret = i2c_master_transmit(dev_handle, prescale, sizeof(prescale), -1);
+    if (ret != ESP_OK) 
+    {
+        ESP_LOGE(tag, "i2c_master_transmit(prescale) fallo: %s", esp_err_to_name(ret));
+    }
+    const uint8_t mode_one_off[] = {0x00, 0x00}; // Volver a MODE1 con SLEEP = 0 
+    ret = i2c_master_transmit(dev_handle, mode_one_off, sizeof(mode_one_off), -1);
+    if (ret != ESP_OK) 
+    {
+        ESP_LOGE(tag, "i2c_master_transmit(mode_one_off) fallo: %s", esp_err_to_name(ret));
+    }
+    const uint8_t restart[] = {0x00, 0x80}; // Reinicio 
+    ret = i2c_master_transmit(dev_handle, restart, sizeof(restart), -1);
+    if (ret != ESP_OK) 
+    {
+        ESP_LOGE(tag, "i2c_master_transmit(restart) fallo: %s", esp_err_to_name(ret));
+    }
+    */
 }
 
 void move_servo(robot_servo_t servo, robot_move_t move)
@@ -281,11 +354,12 @@ void move_servo(robot_servo_t servo, robot_move_t move)
 
     /*
      * Aqui iria tu escritura I2C al PCA9685 si ya la tenias implementada.
-     * Ejemplo:
-     *
-     * ESP_ERROR_CHECK(
-     *     i2c_master_transmit(dev_handle, canal_servo, sizeof(canal_servo), -1)
-     * );
+     *   esp_err_t ret;
+     *   ret = i2c_master_transmit(dev_handle, canal_servo, sizeof(canal_servo), -1);
+     *   if (ret != ESP_OK) 
+     *   {
+     *       ESP_LOGE(tag, "i2c_master_transmit(canal_servo) fallo: %s", esp_err_to_name(ret));
+     *   }
      */
 
     ESP_LOGI(

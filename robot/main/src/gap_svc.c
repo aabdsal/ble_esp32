@@ -78,8 +78,10 @@ static void gap_svc_print_conn_desc(struct ble_gap_conn_desc *desc)
 
 /**
  * @brief Inicia el anuncio BLE con los parametros por defecto de conexion
+ * @param None
+ * @return None
  */
-void gap_svc_advertise(void)
+static void gap_svc_advertise(void)
 {
     bool ble_active = gap_svc_get_enabled();
 
@@ -161,6 +163,8 @@ void gap_svc_advertise(void)
 
 /**
  * @brief Gestiona los eventos GAP reportados por NimBLE
+ * @param None
+ * @return 0 si no ha habido problema
  */
 static int gap_svc_gap_event(struct ble_gap_event *event, void *arg)
 {
@@ -264,8 +268,6 @@ void gap_svc_on_reset(int reason)
 }
 
 /**
- * @brief Sincroniza el host BLE.
- *
  * Importante:
  * Aqui NO forzamos advertising siempre.
  * Solo anunciamos si el interruptor ya estaba en ON.
@@ -314,10 +316,7 @@ void gap_svc_on_sync(void)
     }
 }
 
-/**
- * @brief Punto de entrada de la tarea del host de NimBLE
- */
-void gap_svc_host_task(void *param)
+void gap_svc_host_task(void *pvParameters)
 {
     ESP_LOGI(tag, "BLE Host Task Started");
 
@@ -349,21 +348,12 @@ bool gap_svc_get_enabled(void)
     return ble_active;
 }
 
-/**
- * @brief Funcion publica para activar BLE desde el interruptor.
- */
 void gap_svc_start_advertising(void)
 {
     gap_svc_set_enabled(true);
     gap_svc_advertise();
 }
 
-/**
- * @brief Funcion publica para desactivar BLE desde el interruptor.
- *
- * Para el advertising.
- * Si habia conexion activa, tambien la corta.
- */
 void gap_svc_stop_advertising(void)
 {
     gap_svc_set_enabled(false);
@@ -378,7 +368,7 @@ void gap_svc_stop_advertising(void)
         }
         else
         {
-            ESP_LOGW(tag, "Error parando advertising; rc=%d", rc);
+            ESP_LOGW(tag, "Error parando advertising; rc = %d", rc);
         }
     }
     else

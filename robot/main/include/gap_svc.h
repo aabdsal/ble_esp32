@@ -81,15 +81,25 @@ void gap_svc_set_enabled(bool enabled);
  */
 bool gap_svc_get_enabled(void);
 
+/**
+ * @brief Punto de entrada de la tarea del host de NimBLE
+ * @param pvParameters parametros opcionales de FreeRTOS
+ */
+void gap_svc_host_task(void *pvParameters);
 
-void gap_svc_advertise(void);
-
-
+/**
+ * @brief Activa BLE desde el interruptor, para el advertising.
+ * @param None
+ * @retval None
+ */
 void gap_svc_start_advertising(void);
 
-
+/**
+ * @brief Desactiva BLE desde el interruptor, para el advertising. Si habia conexion activa, tambien la corta.
+ * @param None
+ * @retval None
+ */
 void gap_svc_stop_advertising(void);
-
 
 #ifdef __cplusplus
 }
