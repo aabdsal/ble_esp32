@@ -1,5 +1,15 @@
+/**
+ * @file    ble_client.c
+ * @author  BLE-SEM
+ * @version V0.0
+ * @date    2026-05-16
+ * @brief   Implementacion del cliente BLE.
+ */
+
+/* Includes ------------------------------------------------------------------*/
+
 #include <string.h>
-#include "include/ble_client.h"
+#include "ble_client.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "nimble/nimble_port.h"
@@ -7,23 +17,90 @@
 #include "host/ble_hs.h"
 #include "host/ble_gap.h"
 #include "host/ble_gatt.h"
+#include "services/gap/ble_svc_gap.h"
+
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
 
 static const char *TAG = "BLE_CLIENT";
 
 static uint16_t conn_handle = 0;
 static uint16_t char_handle = 0;
 
-/* ---------- TASK BLE (ARREGLADO) ---------- */
+/* Private function prototypes -----------------------------------------------*/
+
+static void ble_host_task(void *param);
+static int gap_event(struct ble_gap_event *event, void *arg);
+static void ble_app_on_sync(void);
+static void gap_svc_set_device_name(const char *name);
+
+/* Exported functions --------------------------------------------------------*/
+
+void ble_client_init(void)
+{
+
+    esp_err_t ret = nvs_flash_init(); /* Inicializa NVS: se usa para guardar datos de calibracion PHY */
+    
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) 
+    {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+
+    nimble_port_init();
+    gap_svc_set_device_name("ESP32-S3 Mando");
+    ble_hs_cfg.sync_cb = ble_app_on_sync;
+
+    nimble_port_freertos_init(ble_host_task);
+}
+
+void ble_send(char *msg)
+{
+    if (conn_handle == 0 || char_handle == 0) {
+        ESP_LOGW(TAG, "No conectado aún");
+        return;
+    }
+
+    struct os_mbuf *om = ble_hs_mbuf_from_flat(msg, strlen(msg));
+
+    int rc = ble_gattc_write_no_rsp(conn_handle, char_handle, om);
+    
+    if (rc != 0)
+    {
+        ESP_LOGE(TAG, "Error enviando: %d", rc);
+    }
+    
+    ESP_LOGI(TAG, "Enviado: %s", msg);
+    
+}
+
+/* Private functions ---------------------------------------------------------*/
+
+/******************************************************************************/
+/**
+ * @brief  Envoltorio de la tarea del host NimBLE.
+ * @param  param Parametro de tarea (no usado).
+ * @retval None
+ */
 static void ble_host_task(void *param)
 {
+    (void)param;
     nimble_port_run();
     nimble_port_freertos_deinit();
 }
 
-/* ---------- SCAN ---------- */
-
+/******************************************************************************/
+/**
+ * @brief  Callback de eventos GAP.
+ * @param  event Datos del evento GAP.
+ * @param  arg Argumento de usuario.
+ * @retval 0 siempre.
+ */
 static int gap_event(struct ble_gap_event *event, void *arg)
 {
+    (void)arg;
     switch (event->type)
     {
         case BLE_GAP_EVENT_DISC:
@@ -67,7 +144,7 @@ static int gap_event(struct ble_gap_event *event, void *arg)
                 conn_handle = event->connect.conn_handle;
                 ESP_LOGI(TAG, "Conectado al robot!");
 
-                // IMPORTANTE: ponemos handle fijo (simplificación práctica)
+                // IMPORTANTE: ponemos handle fijo (simplificacion practica)
                 char_handle = 12;  // <-- este valor puede cambiar
             }
             else
@@ -82,8 +159,12 @@ static int gap_event(struct ble_gap_event *event, void *arg)
     }
 }
 
-/* ---------- START BLE ---------- */
-
+/******************************************************************************/
+/**
+ * @brief  Callback de sincronizacion para iniciar escaneo.
+ * @param  None
+ * @retval None
+ */
 static void ble_app_on_sync(void)
 {
     ESP_LOGI(TAG, "Escaneando BLE...");
@@ -100,25 +181,13 @@ static void ble_app_on_sync(void)
                  &disc_params, gap_event, NULL);
 }
 
-void ble_client_init(void)
-{
-
-    esp_err_t ret = nvs_flash_init(); /* Inicializa NVS: se usa para guardar datos de calibracion PHY */
-    
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) 
-    {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-
-    nimble_port_init();
-
-    ble_hs_cfg.sync_cb = ble_app_on_sync;
-
-    nimble_port_freertos_init(ble_host_task);
-}
-
-void gap_svc_set_device_name(const char * name)
+/******************************************************************************/
+/**
+ * @brief  Configura el nombre de dispositivo GAP local.
+ * @param  name Cadena de nombre terminada en null.
+ * @retval None
+ */
+static void gap_svc_set_device_name(const char *name)
 {
     int rc = ble_svc_gap_device_name_set(name);
     
@@ -128,24 +197,4 @@ void gap_svc_set_device_name(const char * name)
     }
 }
 
-/* ---------- ENVÍO ---------- */
-
-void ble_send(char *msg)
-{
-    if (conn_handle == 0 || char_handle == 0) {
-        ESP_LOGW(TAG, "No conectado aún");
-        return;
-    }
-
-    struct os_mbuf *om = ble_hs_mbuf_from_flat(msg, strlen(msg));
-
-    int rc = ble_gattc_write_no_rsp(conn_handle, char_handle, om);
-    
-    if (rc != 0)
-    {
-        ESP_LOGE(TAG, "Error enviando: %d", rc);
-    }
-    
-    ESP_LOGI(TAG, "Enviado: %s", msg);
-    
-}
+/* End of file ****************************************************************/
