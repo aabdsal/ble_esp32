@@ -38,10 +38,10 @@ static portMUX_TYPE btn_left_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 /* Private function prototypes -----------------------------------------------*/
 
-static void IRAM_ATTR btn_select_handler_isr(void *arg);
-static void IRAM_ATTR btn_ok_handler_isr(void *arg);
-static void IRAM_ATTR btn_right_handler_isr(void *arg);
-static void IRAM_ATTR btn_left_handler_isr(void *arg);
+static void btn_select_handler_isr(void *arg);
+static void btn_ok_handler_isr(void *arg);
+static void btn_right_handler_isr(void *arg);
+static void btn_left_handler_isr(void *arg);
 
 /* Exported functions --------------------------------------------------------*/
 

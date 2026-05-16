@@ -34,6 +34,7 @@ static const char *tag = "[MANDO]";
 void app_main(void)
 {
     mando_init();
+    ble_client_set_device_name("ESP32-S3 Mando");
     ble_client_init();
     
     uint8_t servo = 1;

@@ -25,6 +25,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 static const char *TAG = "BLE_CLIENT";
+static const char *name_device = "BLE_CLIENT";
 
 static uint16_t conn_handle = 0;
 static uint16_t char_handle = 0;
@@ -34,9 +35,13 @@ static uint16_t char_handle = 0;
 static void ble_host_task(void *param);
 static int gap_event(struct ble_gap_event *event, void *arg);
 static void ble_app_on_sync(void);
-static void gap_svc_set_device_name(const char *name);
 
 /* Exported functions --------------------------------------------------------*/
+
+void ble_client_set_device_name(const char *name)
+{
+    name_device = name;
+}
 
 void ble_client_init(void)
 {
@@ -50,7 +55,13 @@ void ble_client_init(void)
     }
 
     nimble_port_init();
-    gap_svc_set_device_name("ESP32-S3 Mando");
+    int rc = ble_svc_gap_device_name_set(name_device);
+    
+    if (rc != 0) 
+    {
+        ESP_LOGE(TAG, "ble_svc_gap_device_name_set fallo, rc=%d", rc);
+    }
+    
     ble_hs_cfg.sync_cb = ble_app_on_sync;
 
     nimble_port_freertos_init(ble_host_task);
@@ -58,7 +69,8 @@ void ble_client_init(void)
 
 void ble_send(char *msg)
 {
-    if (conn_handle == 0 || char_handle == 0) {
+    if (conn_handle == 0 || char_handle == 0) 
+    {
         ESP_LOGW(TAG, "No conectado aún");
         return;
     }
@@ -179,22 +191,6 @@ static void ble_app_on_sync(void)
 
     ble_gap_disc(BLE_OWN_ADDR_PUBLIC, 0,
                  &disc_params, gap_event, NULL);
-}
-
-/******************************************************************************/
-/**
- * @brief  Configura el nombre de dispositivo GAP local.
- * @param  name Cadena de nombre terminada en null.
- * @retval None
- */
-static void gap_svc_set_device_name(const char *name)
-{
-    int rc = ble_svc_gap_device_name_set(name);
-    
-    if (rc != 0) 
-    {
-        ESP_LOGE(TAG, "ble_svc_gap_device_name_set fallo, rc=%d", rc);
-    }
 }
 
 /* End of file ****************************************************************/

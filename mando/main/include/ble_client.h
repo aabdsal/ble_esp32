@@ -38,6 +38,14 @@ void ble_client_init(void);
  */
 void ble_send(char *msg);
 
+/******************************************************************************/
+/**
+ * @brief  Configura el nombre de dispositivo GAP local.
+ * @param  name Cadena de nombre terminada en null.
+ * @retval None
+ */
+void ble_client_set_device_name(const char *name);
+
 #ifdef __cplusplus
 }
 #endif
