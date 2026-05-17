@@ -1,5 +1,9 @@
 idf_component_register(
-    SRC_DIRS "src" "."
-    INCLUDE_DIRS "include"
-    REQUIRES bt nvs_flash esp_driver_gpio 
+    SRCS
+        "main.c"
+        "src/mando.c"
+        "src/ble_client.c"
+
+    INCLUDE_DIRS
+        "include"
 )
