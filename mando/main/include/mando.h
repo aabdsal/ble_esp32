@@ -64,6 +64,22 @@ bool mando_btn_right_read(void);
  */
 bool mando_btn_left_read(void);
 
+/******************************************************************************/
+/**
+ * @brief  Lee y limpia el evento del interruptor BLE_EN.
+ * @param  None
+ * @retval true si ha cambiado de estado desde la ultima lectura, si no false.
+ */
+bool mando_sw_ble_en_event_read(void);
+
+/******************************************************************************/
+/**
+ * @brief  Lee el nivel actual del interruptor BLE_EN.
+ * @param  None
+ * @retval true si el interruptor esta activado (GND), false en caso contrario.
+ */
+bool mando_sw_ble_en_state(void);
+
 /*
 No tiene que ver con esto pero lo dejo por aqui para hacer debug:
 

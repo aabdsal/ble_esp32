@@ -25,16 +25,19 @@ static const gpio_num_t BTN_SELECT = GPIO_NUM_4;
 static const gpio_num_t BTN_OK     = GPIO_NUM_5;
 static const gpio_num_t BTN_RIGHT  = GPIO_NUM_6;
 static const gpio_num_t BTN_LEFT   = GPIO_NUM_7;
+static const gpio_num_t SW_BLE_EN  = GPIO_NUM_8;
 
 static bool volatile btn_select_save = false;
 static bool volatile btn_ok_save = false;
 static bool volatile btn_right_save = false;
 static bool volatile btn_left_save = false;
+static bool volatile sw_ble_en_save = false;
 
 static portMUX_TYPE btn_select_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static portMUX_TYPE btn_ok_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static portMUX_TYPE btn_right_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static portMUX_TYPE btn_left_spinlock = portMUX_INITIALIZER_UNLOCKED;
+static portMUX_TYPE sw_ble_en_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -42,6 +45,7 @@ static void btn_select_handler_isr(void *arg);
 static void btn_ok_handler_isr(void *arg);
 static void btn_right_handler_isr(void *arg);
 static void btn_left_handler_isr(void *arg);
+static void sw_ble_en_handler_isr(void *arg);
 
 /* Exported functions --------------------------------------------------------*/
 
@@ -60,12 +64,25 @@ void mando_init(void)
     };
 
     gpio_config(&io_conf);
+
+    gpio_config_t io_conf_sw = 
+    {
+        .pin_bit_mask = (1ULL << SW_BLE_EN),
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_ANYEDGE // any edge interrupt for switch
+    };
+
+    gpio_config(&io_conf_sw);
+
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
 
     gpio_isr_handler_add(BTN_SELECT, btn_select_handler_isr, (void*) BTN_SELECT);
     gpio_isr_handler_add(BTN_OK, btn_ok_handler_isr, (void*) BTN_OK);
     gpio_isr_handler_add(BTN_RIGHT, btn_right_handler_isr, (void*) BTN_RIGHT);
     gpio_isr_handler_add(BTN_LEFT, btn_left_handler_isr, (void*) BTN_LEFT);
+    gpio_isr_handler_add(SW_BLE_EN, sw_ble_en_handler_isr, (void*) SW_BLE_EN);
 
 }
 
@@ -115,6 +132,24 @@ bool mando_btn_left_read(void)
     taskEXIT_CRITICAL(&btn_left_spinlock);
 
     return btn_state;
+}
+
+bool mando_sw_ble_en_event_read(void)
+{
+    bool sw_event = false;
+
+    taskENTER_CRITICAL(&sw_ble_en_spinlock);
+    sw_event = sw_ble_en_save;
+    sw_ble_en_save = false;
+    taskEXIT_CRITICAL(&sw_ble_en_spinlock);
+
+    return sw_event;
+}
+
+bool mando_sw_ble_en_state(void)
+{
+    /* Devuelve true si esta conectado a tierra (nivel bajo) = encendido, falso si esta a nivel alto (pull-up) */
+    return (gpio_get_level(SW_BLE_EN) == 0);
 }
 
 /* Private functions ---------------------------------------------------------*/
@@ -173,6 +208,20 @@ static void IRAM_ATTR btn_left_handler_isr(void *arg)
     taskENTER_CRITICAL_ISR(&btn_left_spinlock);
     btn_left_save = true;
     taskEXIT_CRITICAL_ISR(&btn_left_spinlock);
+}
+
+/******************************************************************************/
+/**
+ * @brief  ISR del interruptor BLE_EN.
+ * @param  arg Argumento de la ISR (no usado).
+ * @retval None
+ */
+static void IRAM_ATTR sw_ble_en_handler_isr(void *arg)
+{
+    (void)arg;
+    taskENTER_CRITICAL_ISR(&sw_ble_en_spinlock);
+    sw_ble_en_save = true;
+    taskEXIT_CRITICAL_ISR(&sw_ble_en_spinlock);
 }
 
 /* End of file ****************************************************************/
