@@ -25,7 +25,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 static const char *TAG = "BLE_CLIENT";
-static const char *name_device = "BLE_CLIENT";
+static char name_device[32] = "BLE_CLIENT";
 
 static uint16_t conn_handle = 0;
 static uint16_t char_handle = 0;
@@ -38,10 +38,13 @@ static void ble_app_on_sync(void);
 
 /* Exported functions --------------------------------------------------------*/
 
+
 void ble_client_set_device_name(const char *name)
 {
-    name_device = name;
+    strncpy(name_device, name, sizeof(name_device) - 1);
+    name_device[sizeof(name_device) - 1] = '\0';
 }
+
 
 void ble_client_init(void)
 {
@@ -122,7 +125,9 @@ static int gap_event(struct ble_gap_event *event, void *arg)
 
             if (fields.name != NULL)
             {
-                if (strncmp((char*)fields.name, "ESP32S3_ROBOT", fields.name_len) == 0)
+                
+            if (fields.name_len == strlen("ESP32S3_ROBOT") && memcmp(fields.name, "ESP32S3_ROBOT", fields.name_len) == 0)
+
                 {
                     ESP_LOGI(TAG, "Robot encontrado -> conectando");
 
@@ -159,10 +164,13 @@ static int gap_event(struct ble_gap_event *event, void *arg)
                 // IMPORTANTE: ponemos handle fijo (simplificacion practica)
                 char_handle = 12;  // <-- este valor puede cambiar
             }
+            
             else
             {
-                ESP_LOGI(TAG, "Fallo al conectar");
+                ESP_LOGI(TAG, "Fallo al conectar, reintentando...");
+                ble_app_on_sync();
             }
+
             return 0;
         }
 
